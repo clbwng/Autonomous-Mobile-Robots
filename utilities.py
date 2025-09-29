@@ -18,13 +18,15 @@ class Logger:
             file.write(header_str)
 
 
-    def log_values(self, values_list):
+    def log_values(self, values_list: list):
 
         with open(self.filename, 'a') as file:
             vals_str=""
 
             # TODO Part 5: Write the values from the list to the file
-            ...
+            for value in values_list:
+                vals_str += str(value)
+                vals_str += ", "
             
             vals_str+="\n"
             
@@ -85,7 +87,12 @@ def euler_from_quaternion(quat):
     Convert quaternion (w in last place) to euler roll, pitch, yaw.
     quat = [x, y, z, w]
     """
-    ... # just unpack yaw
+    x, y, z, w = quat
+    
+    # Just calculate yaw (rotation around z-axis)
+    # Using simplified flat ground formula
+    yaw = atan2(2*(w*z + x*y), 1 - 2*(y*y + z*z))
+
     return yaw
 
 
