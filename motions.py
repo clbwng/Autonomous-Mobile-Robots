@@ -38,6 +38,7 @@ class motion_executioner(Node):
         self.imu_initialized=False
         self.odom_initialized=False
         self.laser_initialized=False
+        self.linear_velocity = 0
         
         # TODO Part 3: Create a publisher to send velocity commands by setting the proper parameters in (...)
         self.vel_publisher=self.create_publisher(Twist, '/cmd_vel', 10)
@@ -154,7 +155,10 @@ class motion_executioner(Node):
     def make_spiral_twist(self):
         msg=Twist()
         # fill up the twist msg for spiral motion
-        msg.angular.z = 0.7
+        if self.linear_velocity < 3:
+            self.linear_velocity += 0.001
+            msg.linear.x = self.linear_velocity
+        msg.angular.z = 0.5
         return msg
     
     def make_acc_line_twist(self):
