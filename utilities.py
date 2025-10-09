@@ -51,7 +51,6 @@ class FileReader:
         headers=[]
         with open(self.filename, 'r') as file:
             # Skip the header line
-
             if not read_headers:
                 for line in file:
                     values=line.strip().split(',')
