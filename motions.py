@@ -4,7 +4,7 @@ import rclpy
 from rclpy.node import Node
 
 from utilities import Logger, euler_from_quaternion
-from rclpy.qos import QoSProfile
+from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPolicy
 
 # TODO Part 3: Import message types needed: 
     # For sending velocity commands to the robot: Twist
@@ -41,7 +41,7 @@ class motion_executioner(Node):
         self.linear_velocity = 0
         
         # TODO Part 3: Create a publisher to send velocity commands by setting the proper parameters in (...)
-        self.vel_publisher=self.create_publisher(Twist, '/cmd_vel', 10)
+        self.vel_publisher=self.create_publisher(Twist, '/cmd_vel', qos)
                 
         # loggers
         self.imu_logger=Logger('imu_content_'+str(motion_types[motion_type])+'.csv', headers=["acc_x", "acc_y", "angular_z", "stamp"])
@@ -49,19 +49,19 @@ class motion_executioner(Node):
         self.laser_logger=Logger('laser_content_'+str(motion_types[motion_type])+'.csv', headers=["ranges", "angle_increment", "stamp"])
         
         # TODO Part 3: Create the QoS profile by setting the proper parameters in (...)
-        qos=QoSProfile(reliability=2, durability=2, history=1, depth=10) # from slide 23
-
+        qos=QoSProfile(reliability=ReliabilityPolicy.RELIABLE,
+                            durability=DurabilityPolicy.VOLATILE,
+                            history=HistoryPolicy.KEEP_LAST,
+                            depth=10)
         # TODO Part 5: Create below the subscription to the topics corresponding to the respective sensors
         # IMU subscription
-        self.create_subscription(Imu, "/imu", self.imu_callback, qos) # usually only set qos for subscriber not publisher
+        self.imu_subscriber=self.create_subscription(Imu, "/imu", self.imu_callback, qos)
         
         # ENCODER subscription
-        self.create_subscription(Odometry, "/odom", self.odom_callback, qos)
-        ...
-        
+        self.odom_subscriber=self.create_subscription(Odometry, "/odom", self.odom_callback, qos)
+
         # LaserScan subscription 
-        self.create_subscription(LaserScan, "/scan", self.laser_callback, qos)
-        ...
+        self.laser_subscriber=self.create_subscription(LaserScan, "/scan", self.laser_callback, qos)
         
         self.create_timer(0.1, self.timer_callback)
 
@@ -103,7 +103,7 @@ class motion_executioner(Node):
         ]
         th = euler_from_quaternion(quaternion)
 
-        self.imu_logger.log_values([odom_x_pos, odom_y_pos, th, timestamp])
+        self.odom_logger.log_values([odom_x_pos, odom_y_pos, th, timestamp])
                 
     def laser_callback(self, laser_msg: LaserScan):
         self.laser_initialized = True
