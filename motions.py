@@ -78,11 +78,11 @@ class motion_executioner(Node):
         timestamp = Time.from_msg(imu_msg.header.stamp).nanoseconds
 
         # Get message data
-        imu_angular_velocity = imu_msg.angular_velocity
+        imu_angular_z = imu_msg.angular_velocity.z
         imu_linear_acceleration_x = imu_msg.linear_acceleration.x
         imu_linear_acceleration_y = imu_msg.linear_acceleration.y
 
-        self.imu_logger.log_values([imu_linear_acceleration_x, imu_linear_acceleration_y, imu_angular_velocity, timestamp])
+        self.imu_logger.log_values([imu_linear_acceleration_x, imu_linear_acceleration_y, imu_angular_z, timestamp])
         
 
     def odom_callback(self, odom_msg: Odometry):
