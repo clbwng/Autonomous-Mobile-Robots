@@ -91,6 +91,8 @@ def euler_from_quaternion(quat):
     """
 
     # just unpack yaw
+    x, y, z, w = quat
+    yaw = atan2(2*(w*z + x*y), 1 - 2*(y**2 + z**2))
     return yaw
 
 
@@ -100,7 +102,10 @@ def calculate_linear_error(current_pose, goal_pose):
     # Compute the linear error in x and y
     # Remember that current_pose = [x,y, theta, time stamp] and goal_pose = [x,y]
     # Remember to use the Euclidean distance to calculate the error.
-    error_linear= ...
+    curr_x, curr_y = current_pose[:2]
+    goal_x, goal_y = goal_pose[:2]
+
+    error_linear = sqrt((goal_x-curr_x)**2 + (goal_y-curr_y)**2)
 
     return error_linear
 
@@ -111,11 +116,29 @@ def calculate_angular_error(current_pose, goal_pose):
     # Remember that current_pose = [x,y, theta, time stamp] and goal_pose = [x,y]
     # Use atan2 to find the desired orientation
     # Remember that this function returns the difference in orientation between where the robot currently faces and where it should face to reach the goal
+    curr_x, curr_y, curr_ang = current_pose[:3]
+    goal_x, goal_y = goal_pose[:2]
+    
+    desired_ang = atan2(goal_y-curr_y, goal_x-curr_x)
 
-    error_angular = ...
+    error_angular = desired_ang - curr_ang
 
     # Remember to handle the cases where the angular error might exceed the range [-π, π]
-
-    ...
+    if error_angular > M_PI:
+        error_angular -= 2*M_PI
+    elif error_angular < -M_PI:
+        error_angular += 2*M_PI
     
     return error_angular
+
+
+
+# REAL ROBOT (TurtleBot 4) SATURATION LIMITS
+
+# Max Linear Velocity = 0.31 m/s in safe mode, 0.45 m/s without safe mode
+# Max Angular Veloecity = 1.90 rad/s
+
+# SIM ROBOT (TurtleBot 3 Burger) SATURATION LIMITS
+
+# Max Linear Velocity = 0.22 m/s 
+# Max Angular Veloecity = 2.84 rad/s
