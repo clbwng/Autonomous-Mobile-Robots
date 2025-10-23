@@ -36,14 +36,15 @@ class planner:
             x_max = 2.5
             while x <= x_max + 1e-9:
                 y = 2.0 / (1.0 + math.exp(-2.0 * x)) - 1.0
+                pts.append([x, y])
                 x += self.dx
-                pts.append((x, y))
-        else:
+                
+        else: # parabola
             x_max = 1.5
-            while x < x_max:
-                x += self.dx
+            while x < x_max + 1e-9:
                 y = x * x
                 pts.append([x,y])
+                x += self.dx
    
         return pts
 
