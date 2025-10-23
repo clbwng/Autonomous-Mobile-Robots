@@ -10,7 +10,7 @@ from rclpy import init, spin, spin_once
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 
-from rclpy.qos import QoSProfile
+from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPolicy
 from nav_msgs.msg import Odometry as odom
 
 from localization import localization, rawSensor
@@ -23,7 +23,7 @@ from controller import controller, trajectoryController
 
 
 class decision_maker(Node):
-    
+   
     def __init__(self, publisher_msg, publishing_topic, qos_publisher, goalPoint, rate=10, motion_type=POINT_PLANNER):
 
         super().__init__("decision_maker")
@@ -32,15 +32,15 @@ class decision_maker(Node):
         self.publisher = self.create_publisher(publisher_msg, publishing_topic, qos_publisher)
 
         publishing_period=1/rate
-        
+       
         # Instantiate the controller
         # TODO Part 5: Tune your parameters here
-    
+   
         if motion_type == POINT_PLANNER:
             self.controller=controller(klp=0.2, klv=0.5, kap=0.8, kav=0.6)
             self.planner=planner(POINT_PLANNER)    
-    
-    
+   
+   
         elif motion_type==TRAJECTORY_PLANNER:
             self.controller=trajectoryController(klp=0.2, klv=0.5, kap=0.8, kav=0.6)
             self.planner=planner(TRAJECTORY_PLANNER)
@@ -60,7 +60,7 @@ class decision_maker(Node):
 
 
     def timerCallback(self):
-        
+       
         # TODO Part 3: Run the localization node
         # Remember that this file is already running the decision_maker node.
         spin_once(self.localizer)
@@ -70,12 +70,12 @@ class decision_maker(Node):
             return
 
         vel_msg=Twist()
-        
+       
         # TODO Part 3: Check if you reached the goal
         if type(self.goal) == list:
-            lin_error = calculate_linear_error(self.localizer.getPose(), self.goal)
-            ang_error = calculate_angular_error(self.localizer.getPose(), self.goal)
-            
+            lin_error = calculate_linear_error(self.localizer.pose, self.goal[-1])
+            ang_error = calculate_angular_error(self.localizer.pose, self.goal[-1])
+           
             # set error thresholds -- NEED TO CHANGE
             if lin_error >= -0.1 and lin_error <= 0.1 and ang_error >= -0.1 and ang_error <= 0.1:
                 reached_goal = True
@@ -87,45 +87,49 @@ class decision_maker(Node):
         if reached_goal:
             print("reached goal")
             self.publisher.publish(vel_msg)
-            
+           
             self.controller.PID_angular.logger.save_log()
             self.controller.PID_linear.logger.save_log()
-            
+           
             #TODO Part 3: exit the spin
             raise SystemExit
-            ... 
-        
+            ...
+       
         velocity, yaw_rate = self.controller.vel_request(self.localizer.getPose(), self.goal, True)
 
         #TODO Part 4: Publish the velocity to move the robot
-        vel_msg.x = float(velocity)
-        vel_msg.z = float(yaw_rate)
-        
+        vel_msg.linear.x = float(velocity)
+        vel_msg.angular.z = float(yaw_rate)
+       
         self.publisher.publish(vel_msg)
 
 import argparse
 
 
 def main(args=None):
-    
+   
     init()
 
     # TODO Part 3: You migh need to change the QoS profile based on whether you're using the real robot or in simulation.
     # Remember to define your QoS profile based on the information available in "ros2 topic info /odom --verbose" as explained in Tutorial 3
-    
-    odom_qos=QoSProfile(reliability=2, durability=2, history=1, depth=10)
-
+   
+    odom_qos=QoSProfile(
+                        reliability=ReliabilityPolicy.RELIABLE,
+                        durability=DurabilityPolicy.VOLATILE,
+                        history=HistoryPolicy.KEEP_LAST,
+                        depth=10
+                    )
     # TODO Part 4: instantiate the decision_maker with the proper parameters for moving the robot
     if args.motion.lower() == "point":
         goal = [1,1] # i.e
-        DM=decision_maker( 
+        DM=decision_maker(
             publisher_msg=Twist,
             publishing_topic="/cmd_vel",
             qos_publisher=odom_qos,
             goalPoint=goal,
         )
     elif args.motion.lower() == "trajectory":
-        DM=decision_maker( 
+        DM=decision_maker(
             publisher_msg=Twist,
             publishing_topic="/cmd_vel",
             qos_publisher=odom_qos,
@@ -134,9 +138,9 @@ def main(args=None):
         )
     else:
         print("invalid motion type", file=sys.stderr)        
-    
-    
-    
+   
+   
+   
     try:
         spin(DM)
     except SystemExit:
@@ -145,7 +149,7 @@ def main(args=None):
 
 if __name__=="__main__":
 
-    argParser=argparse.ArgumentParser(description="point or trajectory") 
+    argParser=argparse.ArgumentParser(description="point or trajectory")
     argParser.add_argument("--motion", type=str, default="point")
     args = argParser.parse_args()
 
