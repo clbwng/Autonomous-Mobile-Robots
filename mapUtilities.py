@@ -174,18 +174,23 @@ class mapManipulator(Node):
 
         from sklearn.neighbors import KDTree
         
+        # 1. Find all occupied pixels in the image
         indices = np.where(image_array < 10)
         indices_arr = np.array([indices[0], indices[1]]).T
         
+        # 2. Convert occupied cell indicies into metric/world positions (x,y)
         occupied_points = self.cell_2_position(indices_arr)
         all_indices = np.array([[i, j] for i in range(self.height) for j in range(self.width)])
         all_positions = self.cell_2_position(all_indices)
 
+        # 3. Build KDTree on occupied points 
         kdt=KDTree(occupied_points)
-
+        
+        # 4. For each map center, query distance to the nearest occupied point
         dists=kdt.query(all_positions, k=1)[0][:]
         probabilities=np.exp( -(dists**2) / (2*self.laser_sig**2))
         
+        # 5. Reshape back to 2D map
         likelihood_field=probabilities.reshape(image_array.shape)
         
         likelihood_field_img=np.array(255-255*probabilities.reshape(image_array.shape), dtype=np.int32)

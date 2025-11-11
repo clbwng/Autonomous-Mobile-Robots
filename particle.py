@@ -18,27 +18,34 @@ class particle:
         w: angular velocity
         dt: time step
         """
-        self.pose[0] += ...
-        self.pose[1] += ...
-        self.pose[2] += ...
+        # Generate samples of x,y,theta, according to motion (prediction) - Week 8 slide 70
+        # pose = [x y theta]
+        theta = self.pose[2]
+        self.pose[0] += -(v/w)*sin(theta) + (v/w)*sin(theta + w*dt)
+        self.pose[1] += (v/w)*cos(theta) - (v/w)*cos(theta + w*dt)
+        self.pose[2] += w*dt
 
     # TODO: You need to explain the following function to TA
     def calculateParticleWeight(self, scanOutput: LaserScan, mapManipulatorInstance: mapManipulator, laser_to_ego_transformation: np.array):
-
+        # 1. build laser to map transform from particle pose and sensor data
         T = np.matmul(self.__poseToTranslationMatrix(), laser_to_ego_transformation)
 
+        # 2. laser scan to homogenous cartesian points in laser frame then map frame
         _, scanCartesianHomo = convertScanToCartesian(scanOutput)
         scanInMap = np.dot(T, scanCartesianHomo.T).T
 
+        # 3. Map positions to grid cells
         likelihoodField = mapManipulatorInstance.getLikelihoodField()
         cellPositions = mapManipulatorInstance.position_2_cell(
             scanInMap[:, 0:2])
 
+        # 4. In-bounds mask (handle image row - down vs. map y - up)
         lm_x, lm_y = likelihoodField.shape
 
         cellPositions = cellPositions[np.logical_and.reduce(
                 (cellPositions[:, 0] > 0, -cellPositions[:, 1] > 0, cellPositions[:, 0] < lm_y,  -cellPositions[:, 1] < lm_x))]
 
+        # 5. Log likelihood accumulation
         log_weights = np.log(
             likelihoodField[-cellPositions[:, 1], cellPositions[:, 0]])
         log_weight = np.sum(log_weights)
