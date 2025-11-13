@@ -20,10 +20,22 @@ class particle:
         """
         # Generate samples of x,y,theta, according to motion (prediction) - Week 8 slide 70
         # pose = [x y theta]
+        # Unicycle (differential-drive) motion model
         theta = self.pose[2]
-        self.pose[0] += -(v/w)*sin(theta) + (v/w)*sin(theta + w*dt)
-        self.pose[1] += (v/w)*cos(theta) - (v/w)*cos(theta + w*dt)
-        self.pose[2] += w*dt
+
+        if abs(w) < 1e-6:
+            # Straight line motion
+            dx = v * np.cos(theta) * dt
+            dy = v * np.sin(theta) * dt
+        else:
+            # Integration for constant v and w over time
+            dx = (v / w) * (np.sin(theta + w * dt) - np.sin(theta))
+            dy = (v / w) * (-np.cos(theta + w * dt) + np.cos(theta))
+
+        # Update pose
+        self.pose[0] += dx
+        self.pose[1] += dy
+        self.pose[2] = normalize_angle(theta + w * dt)
 
     # TODO: You need to explain the following function to TA
     def calculateParticleWeight(self, scanOutput: LaserScan, mapManipulatorInstance: mapManipulator, laser_to_ego_transformation: np.array):
