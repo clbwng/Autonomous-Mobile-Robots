@@ -52,7 +52,7 @@ class planner:
         startPose = (startPose[0], startPose[1])
         endPose = (endPose[0], endPose[1])
         # TODO: Call the A* search algorithm
-        path = search(self.costMap, (startPose[0],startPose[1]), (endPose[0], endPose[1]))
+        path = search(self.costMap, (startPose[0],startPose[1]), (endPose[0], endPose[1]), heuristic='euclidean') # either euclidean or manhattan
         if path is None:
             return None
         

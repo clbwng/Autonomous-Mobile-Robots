@@ -47,7 +47,7 @@ def return_path(current_node, maze):
     return path
 
 
-def search(maze, start, end):
+def search(maze, start, end, heuristic='euclidean'):
     maze = maze.copy().T
 
     """
@@ -79,8 +79,11 @@ def search(maze, start, end):
 
     dx = abs(start_node.position[0] - end_node.position[0])
     dy = abs(start_node.position[1] - end_node.position[1])
-    start_node.g = 0 
-    start_node.h = sqrt(dx**2 + dy**2)   # heuristic estimated cost to end Node
+    start_node.g = 0
+    if heuristic.lower() == 'manhattan':
+        start_node.h = dx + dy
+    else:
+        start_node.h = sqrt(dx**2 + dy**2)
     start_node.f = start_node.g + start_node.h
 
     end_node.g = 0       # set a large value if not defined
